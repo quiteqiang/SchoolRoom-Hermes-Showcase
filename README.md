@@ -965,6 +965,24 @@ The bundled Grounded Citations skill maintains a source ledger and requires outs
 
 Use this selectively for document-derived or policy-oriented workflows. Keep the direct Telegram comment path concise, and require a fresh ClassNote API lookup plus explicit confirmation before any cited draft becomes a comment.
 
+### 61. Prompt Caching
+
+Hermes automatically reuses stable prompt prefixes across sessions when the active provider supports prompt caching, including the system prompt and loaded skills ([configuration reference](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**ClassNote integration analysis**
+
+- **Business value:** Lower latency and model input cost for a teacher who sends many observations in one session.
+- **Extension point:** Keep the ClassNote skill, tool schemas, and safety rules stable so Hermes can reuse their prefix.
+- **Responsibilities:** Hermes manages provider-side cache markers; the integration layer keeps request schemas deterministic; the API remains the source of truth and does not depend on model cache state.
+- **Data flow:** `stable Hermes prompt + ClassNote contract → cached model prefix → new teacher message → validated tool call → ClassNote API`.
+- **Interfaces/schema:** No database change. Version the tool contract and prompt deliberately; expose a cache-safe correlation ID but never use cached context as authorization.
+- **Feasibility:** High, with provider capability detection and awareness that model/provider changes or context rewrites can invalidate the cache.
+- **Privacy/security:** Cached prompts may include sensitive context depending on provider policy. Keep student data out of the system prompt and skills, minimize transcript retention, and review provider cache semantics before sending personal data.
+
+**Recommendation**
+
+Enable the default caching behavior for the stable ClassNote instructions, but keep student records and authorization decisions in the API request. Treat caching as a performance optimization, never as memory or access control.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
