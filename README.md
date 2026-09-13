@@ -1073,6 +1073,24 @@ Hermes Webhooks can filter and transform an event, then deliver a rendered messa
 
 Adopt for low-risk, deterministic review reminders only. Keep comment creation, student disambiguation, and policy explanations on the LLM-mediated preview path.
 
+### 67. OpenAI Responses API Mode
+
+Hermes’s API server supports a Responses-style endpoint with server-side conversation state and structured streaming events for text and function calls. This differs from stateless Chat Completions requests that carry the full history each time ([API Server guide](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)).
+
+**ClassNote integration analysis**
+
+- **Business value:** A browser client can render tool progress and preserve a conversation without manually rebuilding the entire chat history.
+- **Extension point:** Use the Responses adapter only for the conversational channel; keep ClassNote business calls in typed tools and the existing API boundary.
+- **Responsibilities:** Hermes stores conversation state and emits structured events; the integration layer converts tool arguments/results; ClassNote API validates every business operation; the frontend renders preview, confirmation, and final state.
+- **Data flow:** `frontend message → Responses request → Hermes tool event → ClassNote API → structured result → Hermes response stream → frontend`.
+- **Interfaces/schema:** Map `previous_response_id`, streamed function-call items, and correlation IDs. No student/comment schema change is needed; add an idempotency key for mutations.
+- **Feasibility:** Medium because client support, server-side retention, reconnect behavior, and event ordering need testing.
+- **Privacy/security:** Server-side history must be scoped to the authenticated teacher and profile. Do not allow a client-supplied conversation ID to cross tenants, and never treat a streamed tool event as proof that a write succeeded without API read-back.
+
+**Recommendation**
+
+Use Responses mode for an optional admin or web-chat client after authentication and session ownership are defined. Keep the direct Telegram path and the canonical review UI unchanged.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
