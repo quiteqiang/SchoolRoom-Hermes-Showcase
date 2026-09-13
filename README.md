@@ -1019,6 +1019,24 @@ Hermes can communicate with independent A2A-compatible agents in both directions
 
 Do not introduce A2A into the initial Telegram path. Consider it later for a tightly scoped, read-only specialist such as multilingual normalization, with the ClassNote API and teacher confirmation remaining authoritative.
 
+### 64. Home Assistant Integration
+
+Hermes can connect to Home Assistant as a messaging platform and expose tools for reading device state, listing services, and calling allowed device actions ([official guide](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/homeassistant)).
+
+**ClassNote integration analysis**
+
+- **Business value:** No direct value for student comments. A possible future use is a classroom operations assistant for room status or device reminders, kept separate from academic records.
+- **Extension point:** If needed, expose it as an independent operational toolset, never as part of the ClassNote comment toolset.
+- **Responsibilities:** Hermes handles Home Assistant events and commands; the integration layer may transform an approved operational event into a notification; ClassNote API remains unrelated and continues to own student/comment data.
+- **Data flow:** `approved operational event → Hermes Home Assistant adapter → optional notification → teacher`; no device event should automatically create a student comment.
+- **Interfaces/schema:** No change to the two-table model. If notifications are later linked, use a transient correlation ID rather than storing device state in student or comment records.
+- **Feasibility:** Technically feasible but out of scope; it introduces another token, event stream, device vocabulary, and safety review.
+- **Privacy/security:** Device states can reveal occupancy and routines. Keep the toolset isolated, allowlist domains/entities, block arbitrary command execution, and require confirmation for actions that affect safety or privacy.
+
+**Recommendation**
+
+Do not integrate Home Assistant into ClassNote. If a school-operations product emerges later, implement it as a separate bounded integration with no access to student records.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
