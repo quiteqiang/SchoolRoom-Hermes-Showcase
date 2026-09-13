@@ -983,6 +983,24 @@ Hermes automatically reuses stable prompt prefixes across sessions when the acti
 
 Enable the default caching behavior for the stable ClassNote instructions, but keep student records and authorization decisions in the API request. Treat caching as a performance optimization, never as memory or access control.
 
+### 62. Persistent Goals
+
+Hermes’s `/goal` command keeps a standing objective across turns. After each turn, a judge decides whether the objective is complete and can trigger bounded continuation until completion, pause, or budget exhaustion ([official guide](https://hermes-agent.nousresearch.com/docs/user-guide/features/goals)).
+
+**ClassNote integration analysis**
+
+- **Business value:** An administrator could ask Hermes to prepare a weekly review summary or reconcile a batch of imported observations without repeatedly prompting it.
+- **Extension point:** Use goal mode only for bounded, read-heavy reporting or import preparation; route every comment mutation through the existing preview and confirmation flow.
+- **Responsibilities:** Hermes owns continuation and turn budget; the integration layer carries a fixed tenant/class scope; the API performs fresh authorization and validation on every call; the frontend shows progress and partial results.
+- **Data flow:** `goal + scope → repeated read/transform calls → structured draft → teacher/admin review → explicit confirmation → API write`.
+- **Interfaces/schema:** Add a goal envelope with owner, scope, acceptance criteria, deadline, and maximum calls. No core table change is needed unless the product later requires business-visible job history.
+- **Feasibility:** Medium; continuation, cancellation, budget limits, partial failures, and stale data need clear behavior.
+- **Privacy/security:** A long-running goal must not expand scope between turns. Persist minimal state, re-check permissions, stop on ambiguity, and never let the judge mark a write as complete without API read-back verification.
+
+**Recommendation**
+
+Use persistent goals for supervised reports and data-quality checks. Do not use them for unattended comment approval, bulk writes, or any workflow where “keep going” could bypass a teacher’s confirmation.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
