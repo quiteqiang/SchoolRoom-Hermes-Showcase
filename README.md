@@ -1109,6 +1109,24 @@ Hermes separates context management behind a ContextEngine interface. The built-
 
 Keep the built-in compressor for the MVP and add a pluggable engine only after transcript-loss cases are measured. Regardless of engine, the API remains the source of truth.
 
+### 69. Tool-Loop Guardrails
+
+Hermes detects repeated failing tool calls, identical no-progress results, runaway search/delegation, and stalled turns. It can warn the model or hard-stop unattended gateway and cron work ([configuration reference](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**ClassNote integration analysis**
+
+- **Business value:** Prevent a malformed student lookup or unavailable API from causing repeated calls, duplicate notifications, or unnecessary model cost.
+- **Extension point:** Configure guardrails around the ClassNote toolset and complement them with API timeouts and idempotency.
+- **Responsibilities:** Hermes detects loops and stalled turns; the integration layer classifies retriable versus terminal errors; ClassNote API returns stable error codes and honors idempotency; the frontend explains when a request stopped.
+- **Data flow:** `teacher request → tool call → API result → guardrail detects no progress or tool succeeds → retry once with changed input or stop → safe user message`.
+- **Interfaces/schema:** Define error categories, retry hints, request IDs, and idempotency keys. No database schema change is required, but API writes must be safe to repeat.
+- **Feasibility:** High for read/write tools if thresholds are tested against legitimate clarification and retry flows.
+- **Privacy/security:** A loop guard must not turn an authorization failure into repeated probing. Avoid exposing raw tool errors, cap per-turn calls, and log only the metadata needed to diagnose stalls.
+
+**Recommendation**
+
+Enable warning and hard-stop behavior for unattended or messaging runs. Permit retries only after a meaningful input or state change, and require the API to reject duplicate comment writes.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
