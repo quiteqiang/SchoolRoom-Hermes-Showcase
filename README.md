@@ -1001,6 +1001,24 @@ Hermes’s `/goal` command keeps a standing objective across turns. After each t
 
 Use persistent goals for supervised reports and data-quality checks. Do not use them for unattended comment approval, bulk writes, or any workflow where “keep going” could bypass a teacher’s confirmation.
 
+### 63. A2A Agent-to-Agent
+
+Hermes can communicate with independent A2A-compatible agents in both directions: it can call peer agents as tools, and it can expose itself as a callable agent over HTTP ([official guide](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/a2a)).
+
+**ClassNote integration analysis**
+
+- **Business value:** A specialist agent could perform a read-only language or reporting task while the ClassNote agent remains responsible for student matching and review.
+- **Extension point:** Add A2A behind the integration layer as an optional specialist boundary, not as a direct database or write path.
+- **Responsibilities:** Hermes handles peer discovery and task transport; the integration layer passes a minimized, scoped payload; ClassNote API validates all student references and comment writes; the frontend shows that a specialist was consulted.
+- **Data flow:** `ClassNote request → scoped A2A task → specialist result with confidence/provenance → ClassNote validation → preview → confirmation → API`.
+- **Interfaces/schema:** Define a peer-task envelope with tenant, purpose, scope, deadline, and allowed output fields. Add a result provenance field to the transient preview; no student/comment schema change is required.
+- **Feasibility:** Medium to low for the MVP because remote auth, peer availability, timeouts, loop prevention, and result validation add operational complexity.
+- **Privacy/security:** Treat peer input and output as untrusted. Use per-peer credentials, toolset allowlists, prompt-injection filtering, rate limits, anti-loop caps, and redaction; never send raw credentials or unrestricted student exports.
+
+**Recommendation**
+
+Do not introduce A2A into the initial Telegram path. Consider it later for a tightly scoped, read-only specialist such as multilingual normalization, with the ClassNote API and teacher confirmation remaining authoritative.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
