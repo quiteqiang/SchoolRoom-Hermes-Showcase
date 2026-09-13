@@ -1055,6 +1055,24 @@ Hermes can connect to Buzz, a human-and-agent collaboration workspace, through a
 
 Defer Buzz until multi-teacher collaboration is a product requirement. If adopted, use it for review coordination and keep the API’s pending/approved state authoritative.
 
+### 66. Webhook Direct Delivery Mode
+
+Hermes Webhooks can filter and transform an event, then deliver a rendered message directly without invoking the LLM. This mode is intended for fast, deterministic notifications and avoids model cost ([Webhook guide](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks)).
+
+**ClassNote integration analysis**
+
+- **Business value:** Send deterministic reminders such as “there are pending comments to review” without asking a model to summarize unchanged data.
+- **Extension point:** Place direct delivery after a trusted event or read-only API result, with the ClassNote API still responsible for access checks.
+- **Responsibilities:** Hermes evaluates filters and templates; the integration layer supplies safe fields; ClassNote API computes the authorized summary; the messaging adapter delivers it.
+- **Data flow:** `scheduled/event trigger → authenticated filter → scoped API read → fixed template → teacher channel`.
+- **Interfaces/schema:** Define a small notification DTO with actor, class scope, count, and non-sensitive link/reference. No database change is required.
+- **Feasibility:** High for counts and status reminders; low for natural-language interpretation or any action requiring context.
+- **Privacy/security:** Never interpolate raw webhook payloads or unvalidated student names into a message. Require signature/replay checks, restrict delivery targets, and ensure the direct path cannot invoke write operations.
+
+**Recommendation**
+
+Adopt for low-risk, deterministic review reminders only. Keep comment creation, student disambiguation, and policy explanations on the LLM-mediated preview path.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
