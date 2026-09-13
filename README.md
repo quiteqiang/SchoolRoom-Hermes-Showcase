@@ -1037,6 +1037,24 @@ Hermes can connect to Home Assistant as a messaging platform and expose tools fo
 
 Do not integrate Home Assistant into ClassNote. If a school-operations product emerges later, implement it as a separate bounded integration with no access to student records.
 
+### 65. Buzz Collaboration Workspace
+
+Hermes can connect to Buzz, a human-and-agent collaboration workspace, through a messaging adapter that supports channels, direct messages, threads, files, and status updates ([official guide](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/buzz)).
+
+**ClassNote integration analysis**
+
+- **Business value:** A staff collaboration channel could collect review requests or discuss draft comments with a wider teaching team.
+- **Extension point:** Treat Buzz as an additional message surface feeding the same Hermes ClassNote skill and API client used by Telegram.
+- **Responsibilities:** Buzz transports messages and attachments; Hermes orchestrates intent and confirmation; the integration layer maps workspace identity to teacher/role; ClassNote API enforces class scope and review policy; the frontend shows the canonical record.
+- **Data flow:** `staff message/thread → Hermes session → student lookup and preview → explicit staff confirmation → ClassNote API → review queue → optional thread notification`.
+- **Interfaces/schema:** Add a generic actor/channel/thread envelope and attachment provenance. No core schema change is required if comments keep their source metadata and request IDs.
+- **Feasibility:** Medium; workspace membership, thread semantics, file caching, identity mapping, and a new transport must be maintained.
+- **Privacy/security:** Restrict channels and allowed users, avoid broad community membership, redact files before model use, and prevent a thread reply from being mistaken for a confirmation unless the authorized actor and target are explicit.
+
+**Recommendation**
+
+Defer Buzz until multi-teacher collaboration is a product requirement. If adopted, use it for review coordination and keep the API’s pending/approved state authoritative.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
