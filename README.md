@@ -1127,6 +1127,24 @@ Hermes detects repeated failing tool calls, identical no-progress results, runaw
 
 Enable warning and hard-stop behavior for unattended or messaging runs. Permit retries only after a meaningful input or state change, and require the API to reject duplicate comment writes.
 
+### 70. Terminal Backend Selection
+
+Hermes can direct terminal execution to different backends, including local execution, a persistent Docker sandbox, SSH, and managed cloud sandboxes. The selected backend determines where agent shell commands run and what isolation exists ([configuration reference](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**ClassNote integration analysis**
+
+- **Business value:** Development and maintenance tasks can run in an isolated environment without giving the teacher-facing agent access to the host or production data.
+- **Extension point:** Separate Hermes profiles: a production classroom profile with no terminal tool, and a maintainer profile using a restricted backend for code and test work.
+- **Responsibilities:** Hermes selects the execution backend; the integration layer exposes only business-safe tools; ClassNote API handles all student data; the frontend never depends on shell access.
+- **Data flow:** `maintainer task → Hermes profile → selected sandbox → tests or API contract checks → reviewed result`; teacher flow remains `message → typed tool → ClassNote API`.
+- **Interfaces/schema:** No database change. Define per-profile tool allowlists, network policy, filesystem mounts, timeout limits, and a clear distinction between test and business environments.
+- **Feasibility:** High for development isolation; production use requires careful backend-specific testing and operational monitoring.
+- **Privacy/security:** Local or remote shells may expose credentials, source files, and network access. Prefer no terminal in the classroom profile, use least privilege and read-only mounts, pin images, and keep backend configuration out of the public repository.
+
+**Recommendation**
+
+Use terminal backend selection as an engineering control, not as a ClassNote runtime feature. Keep production business operations behind the API and reserve shell-enabled profiles for authenticated maintainers.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
