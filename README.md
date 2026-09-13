@@ -1091,6 +1091,24 @@ Hermes’s API server supports a Responses-style endpoint with server-side conve
 
 Use Responses mode for an optional admin or web-chat client after authentication and session ownership are defined. Keep the direct Telegram path and the canonical review UI unchanged.
 
+### 68. Pluggable Context Engines
+
+Hermes separates context management behind a ContextEngine interface. The built-in compressor can be replaced by an explicitly selected plugin, allowing alternative strategies such as lossless context handling ([developer guide](https://hermes-agent.nousresearch.com/docs/developer-guide/context-compression-and-caching)).
+
+**ClassNote integration analysis**
+
+- **Business value:** Long teacher conversations can remain usable without silently losing the rules needed for student matching and confirmation.
+- **Extension point:** Configure a context engine for Hermes sessions while keeping authoritative student and comment data outside the conversation transcript.
+- **Responsibilities:** Hermes decides when and how to compact context; the integration layer rehydrates a minimal business context; ClassNote API resolves current records; the frontend indicates when a summary rather than original text is being used.
+- **Data flow:** `long conversation → context pressure → selected engine compresses/retains context → fresh student lookup → preview/confirmation → API`.
+- **Interfaces/schema:** Define a compact session-context envelope containing current class scope, unresolved candidates, and request ID. Do not add a second business-memory table or rely on compressed text as the canonical record.
+- **Feasibility:** Medium; the engine must preserve negations, names, dates, and pending confirmation state, and must be tested across restarts.
+- **Privacy/security:** Compression can reproduce or retain sensitive text. Apply retention and redaction policies, never include credentials, and require fresh authorization and lookup after resume or compaction.
+
+**Recommendation**
+
+Keep the built-in compressor for the MVP and add a pluggable engine only after transcript-loss cases are measured. Regardless of engine, the API remains the source of truth.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
