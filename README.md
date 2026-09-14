@@ -1307,6 +1307,24 @@ Hermes can progressively edit a platform message as the response is generated, w
 
 Use streaming for short progress indicators and completed previews only. Keep write confirmation and API success as non-streamed, explicit states with delivery deduplication.
 
+### 80. Human Delay
+
+Hermes can add configurable human-like response pacing for messaging platforms, with natural or custom delay modes ([configuration reference](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**ClassNote integration analysis**
+
+- **Business value:** A small pacing delay can make a teacher-facing assistant feel less abrupt and give the system time to combine rapid successive observations.
+- **Extension point:** Apply delay only at the messaging presentation layer; do not delay API transactions, audit events, or safety checks.
+- **Responsibilities:** Hermes controls outbound pacing; the integration layer debounces and correlates messages; ClassNote API validates each finalized request; the frontend shows an immediate processing state.
+- **Data flow:** `teacher message → immediate receipt indicator → bounded intent processing → optional presentation delay → preview or result`.
+- **Interfaces/schema:** No database change. Add a correlation ID and debounce window to the channel adapter so delayed replies cannot be attached to the wrong chat or thread.
+- **Feasibility:** High, but the delay must stay short and be disabled for confirmations, errors, and urgent operational notifications.
+- **Privacy/security:** Delayed messages can arrive after a teacher changes context or loses access. Re-check session scope before delivery, never use delay to hide errors, and avoid batching observations across students without explicit boundaries.
+
+**Recommendation**
+
+Use only a short, optional presentation delay for normal replies. Keep acknowledgements and safety-critical outcomes immediate, and never let pacing alter business ordering or authorization.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
