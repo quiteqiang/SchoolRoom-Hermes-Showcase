@@ -1217,6 +1217,24 @@ Hermes managed scope lets an administrator pin selected configuration and secret
 
 Adopt managed scope for institutional deployments after the single-profile policy is stable. Pin safety-critical behavior, but keep tenant and record authorization exclusively in the ClassNote backend.
 
+### 75. Tool-Use Enforcement
+
+Hermes can inject model guidance that encourages an agent to make an actual tool call instead of merely describing an intended action. It is model-aware and can be enabled automatically or explicitly ([configuration reference](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**ClassNote integration analysis**
+
+- **Business value:** Reduce false assurances such as “I added the comment” when the model never called the ClassNote API.
+- **Extension point:** Apply enforcement to the Hermes ClassNote profile, while API results remain the only evidence of business success.
+- **Responsibilities:** Hermes steers tool behavior; the integration layer validates arguments; ClassNote API executes and reports the operation; the frontend displays the returned state.
+- **Data flow:** `teacher request → enforced tool call → API result → read-back or error → accurate confirmation message`.
+- **Interfaces/schema:** Return structured result states such as `preview`, `confirmation_required`, `created`, and `rejected`. No database schema change is needed, but writes need request IDs and idempotency.
+- **Feasibility:** High; it is a prompt/runtime policy with little application code, but it must be tested across the supported model set.
+- **Privacy/security:** Enforcement is not authorization. Reject unknown tools and invalid arguments at the API boundary, avoid exposing raw backend errors, and never interpret a model’s prose as proof that a write happened.
+
+**Recommendation**
+
+Enable it for the production ClassNote profile as a reliability aid. Pair it with explicit confirmation, API-side validation, and read-back verification so the system remains correct when a model ignores or misinterprets the guidance.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
