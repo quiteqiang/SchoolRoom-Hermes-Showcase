@@ -1289,6 +1289,24 @@ Hermes can limit the number of active sessions and keeps messaging conversations
 
 Adopt strict chat and thread isolation before enabling ClassNote in group conversations. Start with direct teacher chats and add groups only with explicit membership and class-scope rules.
 
+### 79. Gateway Streaming
+
+Hermes can progressively edit a platform message as the response is generated, with platform-aware fallback when message editing is unavailable ([configuration reference](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**ClassNote integration analysis**
+
+- **Business value:** Teachers receive quick feedback that a voice or text observation is being processed instead of waiting without status.
+- **Extension point:** Stream only non-sensitive progress or a draft preview; keep the final structured result and confirmation as a separate authoritative message.
+- **Responsibilities:** Hermes manages transport updates; the integration layer buffers partial model output; ClassNote API is called only after complete validated arguments; the frontend renders pending, confirmed, or failed states.
+- **Data flow:** `message → progress stream → complete intent → student lookup → preview stream/final card → confirmation → API write → final status`.
+- **Interfaces/schema:** Define message correlation, stream state, final version, and cancellation semantics. No database schema change is needed.
+- **Feasibility:** Medium; Telegram editing limits, race conditions, partial Markdown, network retries, and duplicate final messages require testing.
+- **Privacy/security:** Do not stream raw student data, credentials, or unvalidated names to a broad group. Redact intermediate tool output and ensure a partial stream cannot be mistaken for a saved comment.
+
+**Recommendation**
+
+Use streaming for short progress indicators and completed previews only. Keep write confirmation and API success as non-streamed, explicit states with delivery deduplication.
+
 ## Showcase scope
 
 This repository explains the business problem, user flow, Hermes responsibilities, API boundary, two-table model, review workflow, and privacy principles.
