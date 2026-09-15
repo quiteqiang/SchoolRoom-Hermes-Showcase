@@ -332,6 +332,21 @@ Hermes `/bg` starts an isolated asynchronous agent session while the originating
 - **Privacy and security risks:** Background sessions inherit tools and configuration; a delayed result may arrive after access is revoked; retries can duplicate comments; completion notifications can expose details in a shared chat.
 - **Recommendation:** Start with read-only summaries and draft generation. For writes, require a fresh teacher confirmation, enforce API idempotency and version checks, revalidate authorization at commit time, and deliver only a minimal notification before opening the review view.
 
+### 90. Per-Platform Progress Overrides
+
+Hermes supports platform-specific display settings for tool progress, interim assistant messages, and streaming. A platform can be verbose while another stays quiet, and interim messages remain independent from tool-progress bubbles ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Match feedback volume to the channel: useful progress in a private teacher chat, concise updates in a shared space, and a clean final result everywhere.
+- **ClassNote extension point:** Map Hermes progress events to a safe presentation contract in the gateway adapter; keep the business API call and final state independent from progress rendering.
+- **Responsibilities:** Hermes applies per-platform display policy; the integration layer converts tool activity into redacted stage events; the ClassNote API returns canonical pending or saved state; the frontend renders progress, preview, and verified completion separately.
+- **End-to-end flow:** `teacher message → Hermes tool-progress event → platform-specific filter → safe “matching/reviewing/saving” update → API result → explicit final status`.
+- **Interfaces and schema:** Define progress events with `stage`, `correlation_id`, `safe_summary`, and `terminal_state`. No database change is required; the frontend should treat progress as ephemeral and the API response as authoritative.
+- **Feasibility and dependencies:** High. It depends on adapter support for editing or sending interim messages and on a small allowlist of non-sensitive progress phrases.
+- **Privacy and security risks:** A progress bubble can be mistaken for a completed write; raw tool arguments can expose names or identifiers; shared chats may show another teacher's processing state.
+- **Recommendation:** Use concise, platform-specific progress in private teacher chats and suppress detailed tool output in groups. Allow only redacted stages, attach correlation IDs internally, and send one final message that states whether the ClassNote API actually committed the change.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
