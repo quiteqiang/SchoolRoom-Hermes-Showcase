@@ -302,6 +302,21 @@ Hermes can pair unknown direct-message senders, silently ignore them, or politel
 - **Privacy and security risks:** Pairing codes can be forwarded; decline messages can reveal that a bot is active; identity changes and shared teacher accounts can create cross-user access.
 - **Recommendation:** Use explicit pairing for controlled pilots and a quiet ignore/decline policy for public-facing endpoints. Keep bindings revocable, expire pairing codes, rate-limit attempts, and require API authorization on every read and write.
 
+### 88. Quick Commands
+
+Hermes Quick Commands provide deterministic `exec` commands or aliases that run without invoking the LLM. They work across messaging platforms and are intended for predictable utility actions, with a short execution timeout ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Give teachers fast, predictable access to low-risk reads such as a review-queue count, without spending a model turn on a command whose behavior is already known.
+- **ClassNote extension point:** Register aliases or wrapper commands at the Hermes gateway boundary that call a fixed, read-only ClassNote status endpoint; do not expose arbitrary shell input.
+- **Responsibilities:** Hermes dispatches the deterministic shortcut; the integration wrapper validates the authenticated channel and calls the API; the ClassNote API applies authorization and returns a compact result; the frontend or chat adapter renders a plain status response.
+- **End-to-end flow:** `/queue → Hermes quick-command dispatch → fixed integration wrapper → authenticated read-only API call → compact queue summary → teacher response`.
+- **Interfaces and schema:** Define a command name, allowed platform, actor scope, timeout, and response schema such as `pending_count` plus `generated_at`. No student/comment schema change is needed.
+- **Feasibility and dependencies:** High for read-only summaries. It depends on a small stable endpoint and a wrapper that cannot accept or concatenate user-provided shell fragments.
+- **Privacy and security risks:** Exec commands run with the gateway's host privileges; queue output can reveal student information; aliases can collide with built-in commands or be misconfigured.
+- **Recommendation:** Add only fixed, read-only shortcuts such as queue health or help. Prefer a dedicated API wrapper over shell commands, enforce channel authorization, return aggregate data by default, and keep all student-specific writes on the normal Hermes confirmation flow.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
