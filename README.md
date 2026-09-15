@@ -1,4 +1,4 @@
-# ClassNote × Hermes Showcase
+# ClassNote
 
 A sanitized showcase of the ClassNote business architecture, selected business-code modules, and its integration approach for Hermes Agent.
 
