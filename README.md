@@ -317,6 +317,21 @@ Hermes Quick Commands provide deterministic `exec` commands or aliases that run 
 - **Privacy and security risks:** Exec commands run with the gateway's host privileges; queue output can reveal student information; aliases can collide with built-in commands or be misconfigured.
 - **Recommendation:** Add only fixed, read-only shortcuts such as queue health or help. Prefer a dedicated API wrapper over shell commands, enforce channel authorization, return aggregate data by default, and keep all student-specific writes on the normal Hermes confirmation flow.
 
+### 89. Background Sessions
+
+Hermes `/bg` starts an isolated asynchronous agent session while the originating chat remains responsive. The background session inherits the current configuration and delivers a completion or failure message back to the same chat ([messaging gateway guide](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Let a teacher continue chatting while Hermes prepares a multi-student summary, imports a bounded file, or assembles a draft report.
+- **ClassNote extension point:** Route long-running, non-urgent workflows from the gateway to a background task, while keeping single-comment creation synchronous and confirmation-driven.
+- **Responsibilities:** Hermes owns isolated session execution and result delivery; the integration layer creates a task envelope and correlates results; the ClassNote API provides snapshot reads and idempotent writes; the frontend shows queued, running, review-required, completed, or failed states.
+- **End-to-end flow:** `/bg report request → background session with scoped prompt → paginated API reads → draft artifact/result → teacher notification → explicit review → idempotent API write → final read-back`.
+- **Interfaces and schema:** Use a task ID, originating chat reference, actor scope, source snapshot/version, idempotency key, and expiry. Keep task state in Hermes or an external queue; do not add a third business table to the minimal student/comment model.
+- **Feasibility and dependencies:** Medium to high. It needs durable task tracking, retry policy, bounded result delivery, and a way to resume or cancel a task without losing authorization context.
+- **Privacy and security risks:** Background sessions inherit tools and configuration; a delayed result may arrive after access is revoked; retries can duplicate comments; completion notifications can expose details in a shared chat.
+- **Recommendation:** Start with read-only summaries and draft generation. For writes, require a fresh teacher confirmation, enforce API idempotency and version checks, revalidate authorization at commit time, and deliver only a minimal notification before opening the review view.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
