@@ -272,6 +272,21 @@ Hermes spills oversized tool results to its managed cache instead of silently cu
 - **Privacy and security risks:** Full results written to cache remain sensitive; internal file references must not be exposed to teachers or other chats; stale spillover can outlive authorization.
 - **Recommendation:** Cap normal API responses and use spillover only for short-lived, class-scoped report work. Encrypt or isolate the managed cache, expire results quickly, bind retrieval to the originating session, and never treat a preview as a complete roster.
 
+### 86. Context Pressure Warnings
+
+Hermes tracks conversation size relative to the compaction threshold and emits informational or warning notifications. On messaging platforms the notice is plain text, does not modify the message stream, and does not inject extra content into the model context ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Warn a teacher before a long-running class conversation loses older context, reducing mistaken student matches and incomplete follow-up comments.
+- **ClassNote extension point:** Handle the warning in the Hermes gateway presentation layer and offer a safe reset or summary action; keep canonical student/comment state in the API.
+- **Responsibilities:** Hermes measures context pressure and sends the notice; the integration layer suggests a scoped summary or new session; the ClassNote API returns current authoritative data; the frontend distinguishes a context warning from a business error.
+- **End-to-end flow:** `long teacher session → pressure threshold reached → gateway notification → teacher chooses summarize/new session → fresh scoped lookup → preview → API write`.
+- **Interfaces and schema:** A notification event should contain only level, percentage bucket, session reference, and suggested action. No database change is required; summaries should reference student IDs only through authorized opaque handles.
+- **Feasibility and dependencies:** High because the feature is automatic and presentation-only. It depends on a reliable session reset path and on tool calls rereading current API state after compaction.
+- **Privacy and security risks:** A warning containing model, session, or working-context details can leak operational information; compression may omit a prior instruction or consent state.
+- **Recommendation:** Enable the warning for messaging sessions, keep the copy generic, and force a fresh student lookup plus confirmation after compression. Never use conversation history as the sole source of truth for a write.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
