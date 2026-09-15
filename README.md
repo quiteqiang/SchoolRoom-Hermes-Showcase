@@ -242,6 +242,21 @@ Hermes supports an optional `stt.prompt` vocabulary hint for prompt-capable spee
 - **Privacy and security risks:** A roster-derived prompt can leak names to an external STT provider if the backend is not local; stale aliases can bias recognition; a correct transcript can still map to the wrong student.
 - **Recommendation:** Use local STT with short, authorized vocabulary hints, never send the whole school roster, and keep matching plus teacher confirmation in the ClassNote layer. Record only the final corrected text and matched student in the existing comment flow.
 
+### 84. File Read Safety
+
+Hermes limits the amount returned by a single `read_file` call and requires the agent to use `offset` and `limit` for larger content. It also deduplicates unchanged file regions, reducing repeated context injection ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Prevent a large export, attachment, or generated report from overwhelming the conversation and make file-backed review predictable.
+- **ClassNote extension point:** Use the safety limit at the Hermes file-tool boundary, while keeping ordinary student and comment reads behind paginated ClassNote API tools rather than filesystem access.
+- **Responsibilities:** Hermes bounds file reads and asks for ranges; the integration layer maps safe attachment references to permitted content; the ClassNote API controls data scope and pagination; the frontend renders bounded previews with an explicit “load more” action.
+- **End-to-end flow:** `teacher asks about attachment → authorization check → bounded file preview → Hermes extracts relevant fields → API validates student/class scope → frontend shows preview or review draft`.
+- **Interfaces and schema:** Attachment tools should accept an opaque attachment ID plus `offset` and `limit`, and return a content range, total-size hint, and request ID. No student/comment schema change is needed.
+- **Feasibility and dependencies:** High; it requires a read-only attachment adapter and consistent range semantics. It is independent of the two-table model.
+- **Privacy and security risks:** Files may contain rosters, unrelated student information, or embedded credentials; path disclosure can expose local layout; repeated reads can bypass a weak quota if each call is not audited.
+- **Recommendation:** Keep file access disabled in the basic teacher profile until attachment authorization is available. When enabled, expose only opaque, class-scoped attachments, enforce byte and page quotas, and redact sensitive fields before model context.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
