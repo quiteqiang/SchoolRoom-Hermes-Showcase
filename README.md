@@ -257,6 +257,21 @@ Hermes limits the amount returned by a single `read_file` call and requires the 
 - **Privacy and security risks:** Files may contain rosters, unrelated student information, or embedded credentials; path disclosure can expose local layout; repeated reads can bypass a weak quota if each call is not audited.
 - **Recommendation:** Keep file access disabled in the basic teacher profile until attachment authorization is available. When enabled, expose only opaque, class-scoped attachments, enforce byte and page quotas, and redact sensitive fields before model context.
 
+### 85. Tool-Result Spillover
+
+Hermes spills oversized tool results to its managed cache instead of silently cutting them off. The model receives a preview and an internal reference that can be read in bounded ranges; MCP results use a tighter spillover threshold ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Preserve complete report or roster results without flooding the model context, while making incomplete previews explicit to the orchestration layer.
+- **ClassNote extension point:** Prefer API pagination and filtering first; use Hermes spillover only as a safety net for unusually large, authorized exports or multi-student reports.
+- **Responsibilities:** Hermes stores and retrieves oversized tool output; the integration layer marks previews as incomplete and requests the next range; the ClassNote API enforces class scope, pagination, and maximum result size; the frontend shows a progress state and a complete-result indicator.
+- **End-to-end flow:** `report request → scoped API query → bounded page or spillover preview → Hermes requests additional range → integration reconciles pages → API verifies snapshot/version → frontend renders report`.
+- **Interfaces and schema:** Tool responses need `complete`, `next_cursor`, `snapshot_ref`, and `request_id` fields. Keep spillover state outside the student/comment tables; optionally retain only a short-lived job reference.
+- **Feasibility and dependencies:** Medium to high. The integration must support pagination, retention cleanup, and safe retrieval from the same session; large reports may also need an asynchronous export path.
+- **Privacy and security risks:** Full results written to cache remain sensitive; internal file references must not be exposed to teachers or other chats; stale spillover can outlive authorization.
+- **Recommendation:** Cap normal API responses and use spillover only for short-lived, class-scoped report work. Encrypt or isolate the managed cache, expire results quickly, bind retrieval to the originating session, and never treat a preview as a complete roster.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
