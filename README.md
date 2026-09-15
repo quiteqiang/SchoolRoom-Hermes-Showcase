@@ -227,6 +227,21 @@ Hermes can redact personally identifiable information from gateway context befor
 - **Privacy and security risks:** Deterministic hashes still permit repeated-user linkage; names, free-form comments, and attached files may contain PII; a model-generated identifier must never be trusted as an authorization subject.
 - **Recommendation:** Enable redaction for all teacher messaging sessions, pass opaque short-lived tool references to Hermes, and let the API resolve the real actor and student IDs from authenticated context. Add explicit redaction tests for group chats, aliases, and voice transcripts.
 
+### 83. STT Vocabulary Hints
+
+Hermes supports an optional `stt.prompt` vocabulary hint for prompt-capable speech-to-text backends. Plugins can extend the base hint through the `pre_transcription` hook, which is useful for proper nouns, aliases, and domain terminology that Whisper-family models may mis-hear ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Improve recognition of student names, aliases, class labels, and classroom vocabulary before Hermes interprets a voice observation.
+- **ClassNote extension point:** Add a bounded vocabulary provider in the Telegram voice adapter or Hermes plugin layer, generated from the currently authorized class scope.
+- **Responsibilities:** Hermes/STT performs transcription; the integration layer selects and limits vocabulary hints; the ClassNote API remains authoritative for student matching and ambiguity handling; the frontend lets the teacher correct a transcript or matched student before saving.
+- **End-to-end flow:** `voice message → scoped vocabulary selection → local STT with hints → transcript normalization → Hermes intent extraction → student lookup → teacher preview → API write`.
+- **Interfaces and schema:** Define a transient `transcription_context` with locale, allowed aliases, and request ID. Reuse existing comment text and student alias fields; do not add a transcript-only table or persist the full vocabulary in business records.
+- **Feasibility and dependencies:** High for local faster-whisper or another prompt-capable backend; medium when the active backend ignores prompts. It depends on class scoping, bounded prompt size, and a fallback path without hints.
+- **Privacy and security risks:** A roster-derived prompt can leak names to an external STT provider if the backend is not local; stale aliases can bias recognition; a correct transcript can still map to the wrong student.
+- **Recommendation:** Use local STT with short, authorized vocabulary hints, never send the whole school roster, and keep matching plus teacher confirmation in the ClassNote layer. Record only the final corrected text and matched student in the existing comment flow.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
