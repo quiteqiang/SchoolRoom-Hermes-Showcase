@@ -197,6 +197,21 @@ Hermes can add configurable human-like response pacing for messaging platforms, 
 
 Use only a short, optional presentation delay for normal replies. Keep acknowledgements and safety-critical outcomes immediate, and never let pacing alter business ordering or authorization.
 
+### 81. Smart Approvals
+
+Hermes Smart Approvals evaluates potentially dangerous terminal commands in smart, manual, or disabled modes. Smart mode can auto-approve low-risk commands, deny risky commands, and escalate uncertain cases; the denial circuit breaker stops repeated variations of a denied command ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Reduce the chance that a natural-language classroom request can trigger an unsafe host operation while avoiding approval fatigue for routine, read-only maintenance.
+- **ClassNote extension point:** Apply the policy to the Hermes profile used for maintenance or diagnostics. The normal teacher profile should expose approved ClassNote business tools and no general terminal tool.
+- **Responsibilities:** Hermes evaluates terminal risk and presents approvals; the integration layer separates business actions from host commands; the ClassNote API remains responsible for teacher, class, record, and write authorization; the frontend shows pending approval versus completed business state.
+- **End-to-end flow:** `teacher request → Hermes intent classification → approved ClassNote tool or flagged operational command → Smart Approval decision → optional teacher approval → API validation → verified result`.
+- **Interfaces and schema:** Tool calls should carry a request ID, actor scope, action type, and idempotency key. No new student or comment columns are needed; an external audit stream may retain approval decisions without storing raw student text.
+- **Feasibility and dependencies:** High feasibility because this is primarily a Hermes policy boundary. It depends on separate Hermes profiles/toolsets and a typed ClassNote tool contract; it must not be treated as a replacement for API authorization.
+- **Privacy and security risks:** An auxiliary approval model may see command text; an overly broad terminal tool can expose local files or secrets; a false approval could still authorize a harmful operation. Keep terminal disabled for ordinary classroom conversations and deny unrestricted shell patterns.
+- **Recommendation:** Enable Smart or Manual Approvals only for an isolated operations profile. Keep teacher-facing comment creation on dedicated API tools, require explicit confirmation for writes, and use API read-back as the final proof of success.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
