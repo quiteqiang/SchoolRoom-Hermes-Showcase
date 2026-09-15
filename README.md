@@ -287,6 +287,21 @@ Hermes tracks conversation size relative to the compaction threshold and emits i
 - **Privacy and security risks:** A warning containing model, session, or working-context details can leak operational information; compression may omit a prior instruction or consent state.
 - **Recommendation:** Enable the warning for messaging sessions, keep the copy generic, and force a fresh student lookup plus confirmation after compression. Never use conversation history as the sole source of truth for a write.
 
+### 87. Unauthorized DM Behavior
+
+Hermes can pair unknown direct-message senders, silently ignore them, or politely decline them. The policy can be global or overridden per platform, which lets a deployment choose a safe default for private teacher conversations ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Prevent an unknown messaging account from reaching student data or learning whether a particular teacher/class account exists.
+- **ClassNote extension point:** Use Hermes DM admission as the first gate, followed by ClassNote account and role authorization before any business tool is exposed.
+- **Responsibilities:** Hermes handles the initial pair/ignore/decline behavior; the integration layer maps an approved channel identity to a teacher account; the ClassNote API rechecks role, class membership, and record access; the frontend shows only authorized data.
+- **End-to-end flow:** `incoming DM → Hermes sender admission → pairing or decline → approved identity mapping → API authorization → scoped student lookup/comment workflow`.
+- **Interfaces and schema:** Maintain an external identity binding with platform, opaque sender reference, teacher account reference, status, and created/expired timestamps. Do not copy messaging IDs into student rows or comment text.
+- **Feasibility and dependencies:** High. It requires an allowlist or pairing workflow and a clear account-provisioning owner; the API must reject missing or stale bindings.
+- **Privacy and security risks:** Pairing codes can be forwarded; decline messages can reveal that a bot is active; identity changes and shared teacher accounts can create cross-user access.
+- **Recommendation:** Use explicit pairing for controlled pilots and a quiet ignore/decline policy for public-facing endpoints. Keep bindings revocable, expire pairing codes, rate-limit attempts, and require API authorization on every read and write.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
