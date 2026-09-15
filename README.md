@@ -212,6 +212,21 @@ Hermes Smart Approvals evaluates potentially dangerous terminal commands in smar
 - **Privacy and security risks:** An auxiliary approval model may see command text; an overly broad terminal tool can expose local files or secrets; a false approval could still authorize a harmful operation. Keep terminal disabled for ordinary classroom conversations and deny unrestricted shell patterns.
 - **Recommendation:** Enable Smart or Manual Approvals only for an isolated operations profile. Keep teacher-facing comment creation on dedicated API tools, require explicit confirmation for writes, and use API read-back as the final proof of success.
 
+### 82. PII Redaction
+
+Hermes can redact personally identifiable information from gateway context before it reaches the language model. On supported messaging platforms it deterministically hashes user, phone, and chat identifiers while preserving internal routing values; user-chosen names are not automatically changed ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Reduce exposure of messaging identifiers in prompts while preserving enough stable identity for group-session separation and audit correlation.
+- **ClassNote extension point:** Enable redaction in the Hermes gateway boundary, before system context and routing metadata are assembled for the model.
+- **Responsibilities:** Hermes transforms supported identifiers for model context; the integration layer keeps the private-to-redacted mapping in memory or protected gateway state; the ClassNote API authenticates the original actor and receives only the minimum required business identifiers; the frontend displays teacher-safe names and statuses.
+- **End-to-end flow:** `Telegram event → private actor/chat identity → redacted Hermes context → intent and tool selection → scoped API request using an internal authorization context → canonical student/comment result → channel response`.
+- **Interfaces and schema:** Add a correlation contract that distinguishes `public_actor_ref` from the internal authorization subject. No student or comment schema change is required; never persist the reversible mapping in the two-table business database.
+- **Feasibility and dependencies:** High; this is a gateway configuration and adapter-boundary change. It depends on keeping authorization and delivery routing outside the model prompt.
+- **Privacy and security risks:** Deterministic hashes still permit repeated-user linkage; names, free-form comments, and attached files may contain PII; a model-generated identifier must never be trusted as an authorization subject.
+- **Recommendation:** Enable redaction for all teacher messaging sessions, pass opaque short-lived tool references to Hermes, and let the API resolve the real actor and student IDs from authenticated context. Add explicit redaction tests for group chats, aliases, and voice transcripts.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
