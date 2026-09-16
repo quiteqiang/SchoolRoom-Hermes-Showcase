@@ -422,6 +422,21 @@ Hermes can refuse to accept a final answer after code edits unless the turn has 
 - **Privacy and security risks:** Verification commands can print environment values or fixture data; unrestricted shell verification can mutate the database; a passing build does not prove authorization correctness.
 - **Recommendation:** Enable this for engineering profiles with a safe verification allowlist. Require API contract tests, migration checks, and read-back tests where relevant; keep it separate from teacher-facing comment entry and never use a green build as proof of a saved comment.
 
+### 96. Auxiliary Models
+
+Hermes routes side tasks such as image analysis, title generation, vision, compression, and approval review through auxiliary model slots. The default can inherit the main model, while each task can be routed independently to control cost, latency, or capability ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Use an economical model for transcript cleanup, title generation, or summarization while reserving the primary model for ambiguous student matching and final tool decisions.
+- **ClassNote extension point:** Configure auxiliary routing in the Hermes ClassNote profile, with the integration layer labeling auxiliary output as non-authoritative.
+- **Responsibilities:** Hermes selects the model for each side task; the integration layer validates and normalizes its output; the ClassNote API performs authoritative matching and writes; the frontend shows whether text is an automatic draft or a teacher-confirmed result.
+- **End-to-end flow:** `voice/text input → optional auxiliary normalization or summary → primary Hermes intent extraction → scoped student lookup → teacher review → API commit`.
+- **Interfaces and schema:** Auxiliary results should include task type, model-independent confidence or uncertainty, source request ID, and normalized text. Reuse existing comment fields; do not store provider-specific reasoning or credentials.
+- **Feasibility and dependencies:** High, especially for title and compression tasks. It is medium for transcript cleanup because model routing must respect local-only processing requirements and language quality.
+- **Privacy and security risks:** A lower-cost external model may receive student names or classroom observations; compression can omit consent or scope instructions; model-specific output can bias matching.
+- **Recommendation:** Keep speech transcription local when required, use auxiliary models only for bounded non-authoritative transformations, and route student resolution plus writes through the primary contract and teacher review. Document which tasks may leave the local boundary.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
