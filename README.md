@@ -482,6 +482,21 @@ Hermes can reject URLs matching configured domain patterns before web-search, ex
 - **Privacy and security risks:** Domain patterns can reveal internal topology; URL query strings may contain personal data; blocked access is not a substitute for network egress controls or API authorization.
 - **Recommendation:** Start with web/browser tools disabled for student-record sessions. If research is needed, use a reviewed allowlist plus a denylist, strip query parameters before logging, and keep external content informational rather than authoritative for student comments.
 
+### 100. Global Toolset Disable
+
+Hermes supports a global list of disabled toolsets that is applied across the CLI and every gateway platform. A globally disabled toolset stays removed even when a per-platform configuration still lists it ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Establish a simple institution-wide safety baseline, such as disabling web, terminal, or memory tools for every teacher-facing Hermes channel.
+- **ClassNote extension point:** Use the global policy as a coarse guardrail, then expose only the minimum approved ClassNote business tools through the integration profile.
+- **Responsibilities:** Hermes removes disabled capabilities before tool selection; the integration layer publishes the allowed tool contract; the ClassNote API enforces record permissions and transaction rules; the frontend hides controls for unavailable capabilities and provides a clear fallback.
+- **End-to-end flow:** `managed policy → Hermes resolved toolsets → natural-language intent → approved ClassNote tool only → API authorization → frontend result`.
+- **Interfaces and schema:** Maintain a versioned capability manifest containing toolset name, action, read/write class, and required role. No student/comment schema change is required.
+- **Feasibility and dependencies:** High and configuration-driven. It depends on separate teacher and operations profiles if administrators still need terminal, web, or diagnostic capabilities.
+- **Privacy and security risks:** Disabling memory can reduce continuity but improve privacy; disabling a needed tool may push users toward unsafe workarounds; policy drift across profiles can create inconsistent behavior.
+- **Recommendation:** Disable terminal, web, and unrelated external toolsets in the teacher profile by default. Keep the ClassNote API toolset narrow, version the manifest, and review any capability expansion as a security change rather than a prompt change.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
