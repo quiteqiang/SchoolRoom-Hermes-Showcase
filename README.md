@@ -407,6 +407,21 @@ Hermes caches one agent per session so prompt prefixes and the full transcript c
 - **Privacy and security risks:** Cached transcripts contain sensitive observations and tool output; cross-profile key collisions could mix conversations; memory pressure can cause unpredictable latency.
 - **Recommendation:** Use bounded caching for responsiveness, isolate caches by profile and chat origin, avoid storing unnecessary student data in prompts, and always reauthorize the API request after a cache hit or reload.
 
+### 95. Verify-on-Stop
+
+Hermes can refuse to accept a final answer after code edits unless the turn has fresh verification evidence such as a test, build, or lint result. The guard is bounded and does not trigger for documentation-only edits ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Prevent Hermes from claiming that a backend or frontend change is complete without evidence, which is especially useful when it edits the ClassNote repository.
+- **ClassNote extension point:** Apply the guard to engineering or maintenance sessions, not to ordinary teacher conversations that only create comments through API tools.
+- **Responsibilities:** Hermes requests fresh verification after code edits; the integration layer defines the minimum checks for API contracts and UI builds; the ClassNote API and database tests prove runtime behavior; the frontend review surface displays verified versus unverified changes.
+- **End-to-end flow:** `engineering request → Hermes edits workspace → verifier detects missing evidence → tests/build/read-back → result summary → human review → merge or rollback`.
+- **Interfaces and schema:** Define a verification record with request ID, changed areas, command category, exit state, and evidence timestamp. Keep it in code-review or operational metadata; no student/comment schema change is required.
+- **Feasibility and dependencies:** High for repository maintenance. It depends on stable test commands and a distinction between documentation changes, code changes, and business-data writes.
+- **Privacy and security risks:** Verification commands can print environment values or fixture data; unrestricted shell verification can mutate the database; a passing build does not prove authorization correctness.
+- **Recommendation:** Enable this for engineering profiles with a safe verification allowlist. Require API contract tests, migration checks, and read-back tests where relevant; keep it separate from teacher-facing comment entry and never use a green build as proof of a saved comment.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
