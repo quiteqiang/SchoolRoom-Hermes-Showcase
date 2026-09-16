@@ -362,6 +362,21 @@ Hermes serializes gateway turns by resolved session ID so concurrent routing key
 - **Privacy and security risks:** A timeout message may cause a teacher to resend; without idempotency that resend can duplicate data. Do not expose internal lease details or cross-chat identifiers.
 - **Recommendation:** Enable a bounded lease wait for every write-capable session, fail closed on contention, and make retry safe through API idempotency plus a final read-back. Keep read-only queue checks available while a write turn is busy.
 
+### 92. Session Stall Watchdog
+
+Hermes can monitor a busy session whose shared activity clock has been idle while an inbound follow-up is waiting. The gateway emits a warning and a one-shot user notification suggesting a session reset; it is a notify-and-recover aid rather than a business-data timeout ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Make a stuck Telegram conversation visible before a teacher retries blindly or assumes a comment was saved.
+- **ClassNote extension point:** Map the watchdog notification to the integration layer’s pending-request state and provide a retry-safe reset action.
+- **Responsibilities:** Hermes detects inactivity; the integration layer records correlation and retry eligibility; the ClassNote API commits atomically and exposes final status; the frontend marks a request as stalled, retryable, or unknown.
+- **End-to-end flow:** `teacher request → Hermes tool/model activity stops → watchdog notice → operator or teacher resets session → API status lookup → safe retry or review`.
+- **Interfaces and schema:** Add a transient request state machine: `processing`, `stalled`, `retryable`, `committed`, `failed`. Persist only the request ID and idempotency key if operational audit is needed; student/comment tables need no new columns.
+- **Feasibility and dependencies:** High for detection and messaging. Reliable recovery depends on an API status endpoint and idempotent retries.
+- **Privacy and security risks:** A shared chat may reveal that another request is stalled; a blind retry can duplicate a comment; watchdog logs must not include full student text.
+- **Recommendation:** Enable the watchdog for teacher sessions, send generic notices, and require a status/read-back check before retrying any write. Treat the watchdog as an operational signal, never as proof that a database transaction failed.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
