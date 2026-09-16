@@ -347,6 +347,21 @@ Hermes supports platform-specific display settings for tool progress, interim as
 - **Privacy and security risks:** A progress bubble can be mistaken for a completed write; raw tool arguments can expose names or identifiers; shared chats may show another teacher's processing state.
 - **Recommendation:** Use concise, platform-specific progress in private teacher chats and suppress detailed tool output in groups. Allow only redacted stages, attach correlation IDs internally, and send one final message that states whether the ClassNote API actually committed the change.
 
+### 91. Gateway Turn Lease Timeout
+
+Hermes serializes gateway turns by resolved session ID so concurrent routing keys cannot load and write the same transcript. If the lease wait expires, Hermes fails closed and asks the user to resend instead of automatically requeueing a potentially duplicate message ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Prevent two rapid teacher messages from racing against one another and creating duplicate or incorrectly ordered comments.
+- **ClassNote extension point:** Bind the Hermes session lease to the normalized teacher-and-chat scope before any student lookup or write tool is called.
+- **Responsibilities:** Hermes serializes conversation turns; the integration layer carries correlation and idempotency metadata; the ClassNote API performs atomic validation and write decisions; the frontend shows “busy, resend” rather than a false success.
+- **End-to-end flow:** `message A → session lease → scoped lookup/write → verified result → lease release; message B waits → timeout or next turn`.
+- **Interfaces and schema:** Tool requests require `request_id`, `idempotency_key`, actor scope, and client timestamp. The existing comment record can use its current idempotency or source metadata; no new table is required.
+- **Feasibility and dependencies:** High, provided the API write is idempotent and the adapter preserves message ordering. A queue is preferable if the product later requires automatic reordering.
+- **Privacy and security risks:** A timeout message may cause a teacher to resend; without idempotency that resend can duplicate data. Do not expose internal lease details or cross-chat identifiers.
+- **Recommendation:** Enable a bounded lease wait for every write-capable session, fail closed on contention, and make retry safe through API idempotency plus a final read-back. Keep read-only queue checks available while a write turn is busy.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
