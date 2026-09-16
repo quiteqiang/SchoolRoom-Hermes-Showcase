@@ -452,6 +452,21 @@ Hermes can request provider-side fast or priority processing for supported model
 - **Privacy and security risks:** A priority route may use a different provider or data-processing boundary; cost spikes can occur under message bursts; faster output can increase premature or unreviewed writes.
 - **Recommendation:** Pilot fast mode only for short interactive drafts, with a spending cap and provider allowlist. Keep API authorization, confirmation, and idempotency identical to normal mode, and measure total request-to-confirmation latency before broad adoption.
 
+### 98. Clarify Timeout
+
+Hermes can wait for a bounded period when it asks the user a clarifying question. The canonical gateway setting controls how long an incomplete request remains open, with an explicit option for unlimited waiting ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Handle ambiguous names, classes, dates, or comment intent without guessing, while preventing abandoned Telegram sessions from remaining active forever.
+- **ClassNote extension point:** Use clarification before student resolution or any write-capable tool call; keep the pending request correlated with the originating chat and teacher scope.
+- **Responsibilities:** Hermes asks and times out the question; the integration layer stores a short-lived pending intent; the ClassNote API validates the completed answer; the frontend displays the missing field and resumes the preview flow.
+- **End-to-end flow:** `natural-language request → ambiguity detected → Hermes clarification → teacher answer → merged intent → API lookup/validation → preview → confirmed write`.
+- **Interfaces and schema:** Define a pending-intent envelope with request ID, missing field, allowed answer shape, expiry, actor scope, and idempotency key. Store it in session/task state or a short-lived queue, not in student/comment rows.
+- **Feasibility and dependencies:** High. It requires deterministic expiry handling and a resume path that rereads current authorization and student data.
+- **Privacy and security risks:** The prompt may repeat a student name in a group chat; an expired answer could be applied to a newer request; unlimited pending state can consume memory and keep stale authorization.
+- **Recommendation:** Use bounded clarification with concise, privacy-aware choices. Expire stale requests, reject answers without a matching request ID, and require a fresh preview plus API authorization before saving.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
