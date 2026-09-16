@@ -392,6 +392,21 @@ Hermes retries failed messaging-platform connections with capped backoff. It cla
 - **Privacy and security risks:** Raw adapter errors can reveal tokens, account identifiers, or infrastructure details; retry logs can grow indefinitely; a recovered connection must not replay stale writes without idempotency.
 - **Recommendation:** Surface only coarse health states to teachers, alert operators on persistent attention, and reconcile any pending messages by request ID after reconnect. Keep credentials and provider errors inside Hermes logs with redaction.
 
+### 94. Gateway Agent Cache
+
+Hermes caches one agent per session so prompt prefixes and the full transcript can be reused. It supports bounds by entry count, idle time, memory pressure, and recent-session protection; evicted sessions reload from durable session state on the next turn ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Improve response latency for active teacher chats while preventing a busy multi-class gateway from exhausting memory.
+- **ClassNote extension point:** Treat the cached Hermes transcript as a convenience layer only; every business write and important read must still use the current ClassNote API state.
+- **Responsibilities:** Hermes manages cache lifecycle and eviction; the integration layer binds session keys to authorized scopes; the ClassNote API remains the source of truth; the frontend handles a cache reload without changing visible business status.
+- **End-to-end flow:** `message → cached session lookup → Hermes intent/tool call → API validation → result → session cache update; eviction → durable session reload → fresh scope check`.
+- **Interfaces and schema:** Cache entries need an opaque session key, scope fingerprint, last-used time, and transcript version. No student/comment schema change is needed; invalidate or refresh the fingerprint when authorization changes.
+- **Feasibility and dependencies:** High, with memory limits chosen from the actual runtime budget. It depends on durable session storage and a scope check after eviction or reconnect.
+- **Privacy and security risks:** Cached transcripts contain sensitive observations and tool output; cross-profile key collisions could mix conversations; memory pressure can cause unpredictable latency.
+- **Recommendation:** Use bounded caching for responsiveness, isolate caches by profile and chat origin, avoid storing unnecessary student data in prompts, and always reauthorize the API request after a cache hit or reload.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
