@@ -377,6 +377,21 @@ Hermes can monitor a busy session whose shared activity clock has been idle whil
 - **Privacy and security risks:** A shared chat may reveal that another request is stalled; a blind retry can duplicate a comment; watchdog logs must not include full student text.
 - **Recommendation:** Enable the watchdog for teacher sessions, send generic notices, and require a status/read-back check before retrying any write. Treat the watchdog as an operational signal, never as proof that a database transaction failed.
 
+### 93. Reconnect Attention Escalation
+
+Hermes retries failed messaging-platform connections with capped backoff. It classifies clearly permanent adapter failures and can mark a continuously retrying platform as needing attention, while continuing retries for eventual recovery ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Distinguish a temporary channel outage from a persistent integration problem so teachers do not assume their Telegram request reached ClassNote.
+- **ClassNote extension point:** Feed gateway connection health into the application’s operational status surface and message-delivery state, without changing student or comment business data.
+- **Responsibilities:** Hermes owns adapter retry and fatal-error classification; the integration layer maps health to a channel status; the ClassNote API remains usable through an alternate authenticated frontend; the frontend shows channel unavailable versus API unavailable.
+- **End-to-end flow:** `adapter disconnect → Hermes retries/classifies → attention flag → integration health endpoint → frontend warning or alternate entry point → queued request reconciliation after reconnect`.
+- **Interfaces and schema:** Define a health payload with platform, status, last-success time bucket, retry state, and safe reason code. Store delivery attempts in the existing delivery mechanism or operational log, not in student/comment rows.
+- **Feasibility and dependencies:** High. It requires health polling or event hooks and a reconciliation policy for messages received during an outage.
+- **Privacy and security risks:** Raw adapter errors can reveal tokens, account identifiers, or infrastructure details; retry logs can grow indefinitely; a recovered connection must not replay stale writes without idempotency.
+- **Recommendation:** Surface only coarse health states to teachers, alert operators on persistent attention, and reconcile any pending messages by request ID after reconnect. Keep credentials and provider errors inside Hermes logs with redaction.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
