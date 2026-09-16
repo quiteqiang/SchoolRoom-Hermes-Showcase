@@ -467,6 +467,21 @@ Hermes can wait for a bounded period when it asks the user a clarifying question
 - **Privacy and security risks:** The prompt may repeat a student name in a group chat; an expired answer could be applied to a newer request; unlimited pending state can consume memory and keep stale authorization.
 - **Recommendation:** Use bounded clarification with concise, privacy-aware choices. Expire stale requests, reject answers without a matching request ID, and require a fresh preview plus API authorization before saving.
 
+### 99. Website Blocklist
+
+Hermes can reject URLs matching configured domain patterns before web-search, extraction, browser, or other URL-access tools execute. Rules can include exact domains, wildcard subdomains, and shared rule files ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Prevent an agent with web access from reaching administrative portals, private systems, or unrelated sites during a classroom workflow.
+- **ClassNote extension point:** Apply the blocklist to Hermes web and browser tools, while exposing only an allowlisted source set for optional curriculum or policy research.
+- **Responsibilities:** Hermes blocks matching URL requests; the integration layer tags the tool call with purpose and class scope; the ClassNote API remains the source for student and comment data; the frontend explains that an external lookup was blocked without revealing rule details.
+- **End-to-end flow:** `teacher asks for external context → Hermes chooses web/browser tool → URL policy check → block or fetch → sanitized evidence → draft/preview → ClassNote API write only after review`.
+- **Interfaces and schema:** Define a URL-policy result with `allowed`, safe reason code, tool name, and correlation ID. No business schema change is needed; evidence references should be optional and sanitized.
+- **Feasibility and dependencies:** High for a deny boundary; medium for an allowlist because school policy and curriculum sources need ownership and maintenance.
+- **Privacy and security risks:** Domain patterns can reveal internal topology; URL query strings may contain personal data; blocked access is not a substitute for network egress controls or API authorization.
+- **Recommendation:** Start with web/browser tools disabled for student-record sessions. If research is needed, use a reviewed allowlist plus a denylist, strip query parameters before logging, and keep external content informational rather than authoritative for student comments.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
