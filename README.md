@@ -437,6 +437,21 @@ Hermes routes side tasks such as image analysis, title generation, vision, compr
 - **Privacy and security risks:** A lower-cost external model may receive student names or classroom observations; compression can omit consent or scope instructions; model-specific output can bias matching.
 - **Recommendation:** Keep speech transcription local when required, use auxiliary models only for bounded non-authoritative transformations, and route student resolution plus writes through the primary contract and teacher review. Document which tasks may leave the local boundary.
 
+### 97. Fast Mode
+
+Hermes can request provider-side fast or priority processing for supported models. It is opt-in and may carry a premium cost; automatic modes can choose fast processing after a configured waiting window ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Reduce perceived latency during live classroom use, especially when a teacher is waiting for a student match or a short review preview.
+- **ClassNote extension point:** Apply fast mode selectively to interactive, low-payload intent turns; keep batch reports and background work on normal routing.
+- **Responsibilities:** Hermes requests the chosen service tier; the integration layer sets a request class and cost policy; the ClassNote API handles the same validation and transaction path regardless of model speed; the frontend shows processing state without promising completion time.
+- **End-to-end flow:** `teacher message → request priority classification → Hermes fast or normal model call → validated tool arguments → API lookup/write → final status`.
+- **Interfaces and schema:** Add an internal request class such as `interactive`, `batch`, or `background`, plus a correlation ID and latency budget. No student/comment schema change is necessary.
+- **Feasibility and dependencies:** Medium; availability and pricing vary by provider, and fast mode does not improve a slow database or network hop. It should be measured against end-to-end latency.
+- **Privacy and security risks:** A priority route may use a different provider or data-processing boundary; cost spikes can occur under message bursts; faster output can increase premature or unreviewed writes.
+- **Recommendation:** Pilot fast mode only for short interactive drafts, with a spending cap and provider allowlist. Keep API authorization, confirmation, and idempotency identical to normal mode, and measure total request-to-confirmation latency before broad adoption.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
