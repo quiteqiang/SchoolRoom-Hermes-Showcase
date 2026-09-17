@@ -557,6 +557,21 @@ Hermes can bound the number of agent/tool iterations in a turn, limiting how lon
 - **Privacy and security risks:** A low budget can cause incomplete matching; a high budget increases cost and duplicate-call risk; retry details may expose internal errors.
 - **Recommendation:** Use a conservative per-turn budget, make repeated reads batchable, and stop immediately on authorization or validation errors. Require a fresh teacher action after exhaustion and never auto-retry a write without idempotency.
 
+### 105. Wall-Clock Run Budget
+
+Hermes can bound the wall-clock duration of a conversation run independently from the iteration count. At a configured progress point it tells the agent to stop new discovery and produce the deliverable from the state already collected; stale timeouts are scaled to the remaining budget ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Keep a teacher-facing request or report job within a predictable response window and avoid spending the entire run on one slow provider call.
+- **ClassNote extension point:** Assign different budgets to interactive comment capture and background reporting, while leaving the API transaction path bounded separately.
+- **Responsibilities:** Hermes manages the conversation deadline and wrap-up guidance; the integration layer converts timeout into a retry-safe state; the ClassNote API commits atomically; the frontend shows draft, timed-out, or verified states.
+- **End-to-end flow:** `request → bounded intent/tool work → budget warning → final preview or timeout → API status/read-back → teacher retry or review`.
+- **Interfaces and schema:** Requests need a deadline, request ID, idempotency key, and completion state. No student/comment schema change is required; a job reference can live in task metadata.
+- **Feasibility and dependencies:** High for interactive work; medium for long reports because model and API budgets must be coordinated.
+- **Privacy and security risks:** A deadline can end after the API committed but before the reply was delivered; retries may duplicate writes; timeout details can expose internal timing or provider behavior.
+- **Recommendation:** Use a conservative budget for synchronous comments and a separate asynchronous path for reports. Always query API status after timeout, then retry only with the same idempotency key and a fresh authorization check.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
