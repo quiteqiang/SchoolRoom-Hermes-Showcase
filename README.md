@@ -512,6 +512,21 @@ Hermes bounds the size and read time of automatically loaded context files such 
 - **Privacy and security risks:** A truncated rule file may omit a safety instruction; auto-loaded files can contain private data or hostile instructions; slow mounts can create inconsistent startup behavior.
 - **Recommendation:** Keep only non-sensitive, stable orchestration guidance in auto-loaded context. Treat missing or truncated policy as a fail-closed condition for writes, and let the API enforce every rule that affects data access.
 
+### 102. Tool Output Truncation Limits
+
+Hermes applies related caps to raw tool output before it enters the conversation. This limits oversized command, search, and integration responses while allowing the agent to request smaller pages or use spillover when the full result is needed ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Prevent a broad student search or report query from silently consuming the context window and degrading later intent extraction.
+- **ClassNote extension point:** Return paginated, typed API responses with explicit completeness metadata so Hermes never mistakes a truncated page for the full result.
+- **Responsibilities:** Hermes enforces final output caps; the integration layer preserves `complete`, cursor, and snapshot fields; the ClassNote API performs filtering and pagination; the frontend shows partial versus complete results.
+- **End-to-end flow:** `teacher query → API filter/page → Hermes output cap → completeness check → next-page request if needed → reconciled preview → confirmed action`.
+- **Interfaces and schema:** Tool responses should include `items`, `next_cursor`, `complete`, `snapshot_ref`, and `request_id`. No new business table is required.
+- **Feasibility and dependencies:** High if APIs are paginated. It depends on stable snapshot semantics for reports that span multiple pages.
+- **Privacy and security risks:** A truncated result can omit a relevant student; raw output may include unnecessary PII; repeated pagination can bypass rate limits if not bounded.
+- **Recommendation:** Make completeness a required field in every ClassNote read tool, cap page size server-side, and block writes based on incomplete lookup results. Use aggregate summaries by default and require explicit expansion for student-level details.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
