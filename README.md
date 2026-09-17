@@ -497,6 +497,21 @@ Hermes supports a global list of disabled toolsets that is applied across the CL
 - **Privacy and security risks:** Disabling memory can reduce continuity but improve privacy; disabling a needed tool may push users toward unsafe workarounds; policy drift across profiles can create inconsistent behavior.
 - **Recommendation:** Disable terminal, web, and unrelated external toolsets in the teacher profile by default. Keep the ClassNote API toolset narrow, version the manifest, and review any capability expansion as a security change rather than a prompt change.
 
+### 101. Context File Truncation
+
+Hermes bounds the size and read time of automatically loaded context files such as project guidance documents. Oversized or slow files are truncated or skipped with a warning so one context source cannot crowd out the rest of the system prompt ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Keep the ClassNote orchestration rules available even when a repository contains large guidance files, generated output, or slow mounted storage.
+- **ClassNote extension point:** Place the public Hermes integration contract in a small, versioned context file and keep data-specific policy in typed tools rather than a giant prompt.
+- **Responsibilities:** Hermes discovers, bounds, and loads context; the integration layer validates the loaded contract version; the ClassNote API remains authoritative for permissions and records; the frontend does not depend on hidden prompt content.
+- **End-to-end flow:** `session start → Hermes discovers context files → size/time guard → compact integration rules loaded → natural-language intent → scoped API tool → frontend result`.
+- **Interfaces and schema:** Define a compact context manifest with contract version, allowed actions, and escalation rules. No student/comment schema change is needed.
+- **Feasibility and dependencies:** High. It requires keeping policy modular and testing behavior when a context file is truncated or unavailable.
+- **Privacy and security risks:** A truncated rule file may omit a safety instruction; auto-loaded files can contain private data or hostile instructions; slow mounts can create inconsistent startup behavior.
+- **Recommendation:** Keep only non-sensitive, stable orchestration guidance in auto-loaded context. Treat missing or truncated policy as a fail-closed condition for writes, and let the API enforce every rule that affects data access.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
