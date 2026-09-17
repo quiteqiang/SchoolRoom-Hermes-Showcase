@@ -527,6 +527,21 @@ Hermes applies related caps to raw tool output before it enters the conversation
 - **Privacy and security risks:** A truncated result can omit a relevant student; raw output may include unnecessary PII; repeated pagination can bypass rate limits if not bounded.
 - **Recommendation:** Make completeness a required field in every ClassNote read tool, cap page size server-side, and block writes based on incomplete lookup results. Use aggregate summaries by default and require explicit expansion for student-level details.
 
+### 103. Context Compression
+
+Hermes can summarize older conversation turns when context approaches its limit, using configured compression behavior and an appropriate auxiliary model. The goal is to retain useful state while reducing the amount of raw history sent on later turns ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Keep a long classroom conversation usable without repeatedly sending every prior observation, while reducing latency and model cost.
+- **ClassNote extension point:** Treat compression as a conversational optimization and provide a compact canonical state summary; never use compressed text as the authority for student identity or saved comments.
+- **Responsibilities:** Hermes performs compression; the integration layer supplies stable intent and correlation markers; the ClassNote API resolves current student/comment state; the frontend warns when a resumed conversation needs reconfirmation.
+- **End-to-end flow:** `long session → compression threshold → Hermes summary → new teacher message → fresh API lookup → preview with current state → API commit`.
+- **Interfaces and schema:** Compression metadata should include session version, summarized turn range, unresolved questions, and pending request ID. No student/comment schema change is required.
+- **Feasibility and dependencies:** High, but quality depends on the compressor context window and clear summary invariants.
+- **Privacy and security risks:** Compression can omit a consent decision, negation, or student distinction; the summary may contain sensitive observations; an auxiliary provider may see data that was intended to remain local.
+- **Recommendation:** Use compression for navigation and drafting only. After compression, force fresh student resolution, scope validation, and teacher confirmation before a write; prefer local or approved processing for sensitive summaries.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
