@@ -602,6 +602,21 @@ Hermes exposes a reasoning-effort control from none through higher levels, with 
 - **Privacy and security risks:** Higher effort may send more context or keep it longer; hidden reasoning must not be exposed as a data source; model effort does not grant authorization.
 - **Recommendation:** Default to low or medium for routine observations and escalate only for ambiguity, never for permission. Keep the output contract structured, hide internal reasoning, and require teacher confirmation whenever confidence remains low.
 
+### 108. Runtime Metadata Footer
+
+Hermes can append a small runtime-context footer to the final gateway message, such as model, context occupancy, latency, or a home-relative working context. The footer is opt-in and appears only on the final message, leaving interim updates clean ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Give teachers and operators lightweight provenance about how a response was produced without exposing internal prompts or tool arguments.
+- **ClassNote extension point:** Add a sanitized final-message footer in the channel adapter, separate from the business result card and API response.
+- **Responsibilities:** Hermes formats selected runtime fields; the integration layer removes operational details not suitable for the audience; the ClassNote API returns the authoritative record state; the frontend labels metadata as diagnostic, not business content.
+- **End-to-end flow:** `request → Hermes processing → ClassNote API result → verified final message → optional safe runtime footer`.
+- **Interfaces and schema:** Define an allowlist of fields such as response latency bucket and request correlation status. No database schema change is needed; do not persist the raw footer with the comment.
+- **Feasibility and dependencies:** High. It depends on channel-specific formatting and a clear separation between teacher-facing and operator-facing views.
+- **Privacy and security risks:** Model names, working context, or timing can reveal deployment details; latency can be misread as a guarantee; footers can make a draft look more authoritative.
+- **Recommendation:** Keep the footer off for ordinary teacher messages and enable only a minimal, non-operational status in operator views. Never include paths, hostnames, provider credentials, raw tool counts, or student identifiers.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
