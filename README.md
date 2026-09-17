@@ -632,6 +632,21 @@ Hermes can append an advisory when a file write or patch failed and the target w
 - **Privacy and security risks:** Verification output can expose filenames or fixture data; a file change can still be semantically wrong; a successful patch does not prove a safe migration or authorized data operation.
 - **Recommendation:** Enable the verifier for code and configuration maintenance, pair it with tests and clean-diff review, and keep it separate from business-data correctness. For student comments, trust API transaction status and read-back, never filesystem mutation evidence.
 
+### 110. Per-Turn Summary and Spinner Token Flow
+
+Hermes can show a per-turn accounting summary and live output-token flow in interactive CLI surfaces. The summary is derived from observed tool progress, excludes failed calls, and is suppressed for gateway/messaging surfaces that use other display controls ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Help operators understand whether a slow ClassNote workflow spent time reading, searching, or running tools without exposing the teacher’s data in the conversation.
+- **ClassNote extension point:** Convert the same internal accounting concepts into a redacted operator metric stream; keep teacher-facing Telegram responses concise and business-focused.
+- **Responsibilities:** Hermes counts tool activity and tokens in supported surfaces; the integration layer emits safe stage metrics; the ClassNote API exposes request latency and transaction status; the frontend provides an operator diagnostics view separate from teacher comments.
+- **End-to-end flow:** `request → tool/model activity → ephemeral accounting events → API result → operator summary and teacher-safe final response`.
+- **Interfaces and schema:** Use a metric event with request ID, stage, duration bucket, tool category, and terminal state. Do not store raw prompts, token text, or student details in the student/comment tables.
+- **Feasibility and dependencies:** Medium to high. CLI support is straightforward; a useful web/dashboard view requires a metrics transport and retention policy.
+- **Privacy and security risks:** Timing and tool categories can reveal sensitive workflow details; token counts may expose usage patterns; detailed summaries in group chats can identify another teacher’s activity.
+- **Recommendation:** Keep raw token flow CLI-only and use coarse, redacted metrics for operators. Send teachers only “processing/reviewed/saved” states, and ensure the final business result comes from the API rather than display telemetry.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
