@@ -572,6 +572,21 @@ Hermes can bound the wall-clock duration of a conversation run independently fro
 - **Privacy and security risks:** A deadline can end after the API committed but before the reply was delivered; retries may duplicate writes; timeout details can expose internal timing or provider behavior.
 - **Recommendation:** Use a conservative budget for synchronous comments and a separate asynchronous path for reports. Always query API status after timeout, then retry only with the same idempotency key and a fresh authorization check.
 
+### 106. API Timeouts
+
+Hermes separates socket-read, stale-stream, stale-non-stream, and overall API-call timeouts. Local providers receive different implicit handling because large-context prefill can take longer, while explicit provider or model settings override the defaults ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Distinguish a slow but healthy local model from a genuinely stuck request, reducing false failures during voice transcription or natural-language matching.
+- **ClassNote extension point:** Coordinate Hermes model timeouts with integration HTTP timeouts and database transaction timeouts so one layer does not abandon work while another continues.
+- **Responsibilities:** Hermes bounds provider calls; the integration layer maps timeout categories to retry policy; the ClassNote API owns transaction deadlines and idempotent status checks; the frontend shows processing versus retryable failure.
+- **End-to-end flow:** `message/voice → STT or model call → timeout classification → retry/fallback or status lookup → API validation/write → final response`.
+- **Interfaces and schema:** Return a stable error envelope with timeout class, retryable flag, request ID, and idempotency key. No new student/comment columns are required.
+- **Feasibility and dependencies:** High, but requires measured baselines for local STT/model latency and API response time. Provider-specific timeout support must be tested.
+- **Privacy and security risks:** Automatic retries can duplicate a successful but unacknowledged write; long timeouts hold sensitive context in memory; fallback providers may cross data-processing boundaries.
+- **Recommendation:** Use longer read timeouts only for explicitly local STT/model paths, keep write transactions short, and make every retry status-aware. Do not enable broad fallback for student content without an approved privacy boundary.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
