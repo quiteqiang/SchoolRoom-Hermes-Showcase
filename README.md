@@ -587,6 +587,21 @@ Hermes separates socket-read, stale-stream, stale-non-stream, and overall API-ca
 - **Privacy and security risks:** Automatic retries can duplicate a successful but unacknowledged write; long timeouts hold sensitive context in memory; fallback providers may cross data-processing boundaries.
 - **Recommendation:** Use longer read timeouts only for explicitly local STT/model paths, keep write transactions short, and make every retry status-aware. Do not enable broad fallback for student content without an approved privacy boundary.
 
+### 107. Reasoning Effort
+
+Hermes exposes a reasoning-effort control from none through higher levels, with session-scoped and per-model overrides. Higher effort can improve complex decisions at the cost of tokens and latency, and Hermes clamps unsupported levels rather than silently escalating them ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Use low effort for simple queue lookups and higher effort for ambiguous multi-student references or report planning.
+- **ClassNote extension point:** Let the integration layer classify request complexity, but keep the final effort policy in the Hermes profile so user text cannot arbitrarily increase cost or bypass safeguards.
+- **Responsibilities:** Hermes selects the supported reasoning level; the integration layer supplies a request class and validates tool arguments; the ClassNote API remains deterministic and authoritative; the frontend indicates review required for ambiguous results.
+- **End-to-end flow:** `teacher request → complexity classification → bounded reasoning effort → tool call → API lookup/validation → preview → confirmation`.
+- **Interfaces and schema:** Add internal `reasoning_class`, latency budget, and request ID metadata. No student/comment schema change is needed; never persist hidden reasoning content.
+- **Feasibility and dependencies:** High, subject to provider support and a cost/latency policy. It improves interpretation quality but cannot repair incomplete student data.
+- **Privacy and security risks:** Higher effort may send more context or keep it longer; hidden reasoning must not be exposed as a data source; model effort does not grant authorization.
+- **Recommendation:** Default to low or medium for routine observations and escalate only for ambiguity, never for permission. Keep the output contract structured, hide internal reasoning, and require teacher confirmation whenever confidence remains low.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
