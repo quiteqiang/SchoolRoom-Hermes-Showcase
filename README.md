@@ -542,6 +542,21 @@ Hermes can summarize older conversation turns when context approaches its limit,
 - **Privacy and security risks:** Compression can omit a consent decision, negation, or student distinction; the summary may contain sensitive observations; an auxiliary provider may see data that was intended to remain local.
 - **Recommendation:** Use compression for navigation and drafting only. After compression, force fresh student resolution, scope validation, and teacher confirmation before a write; prefer local or approved processing for sensitive summaries.
 
+### 104. Iteration Budget
+
+Hermes can bound the number of agent/tool iterations in a turn, limiting how long an autonomous loop may continue. The budget is intended to stop runaway tool use while allowing ordinary multi-step workflows to finish ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Put a hard ceiling on repeated student searches, clarification loops, or failed write retries so one Telegram message cannot consume unbounded resources.
+- **ClassNote extension point:** Set the budget around the integration workflow and return a structured “needs review/retry” state when the ceiling is reached.
+- **Responsibilities:** Hermes counts model/tool iterations; the integration layer classifies retryable versus terminal API errors; the ClassNote API enforces idempotency and transaction limits; the frontend shows incomplete processing instead of a fabricated answer.
+- **End-to-end flow:** `request → lookup → disambiguation/tool calls → iteration budget reached or success → API commit/read-back → teacher status`.
+- **Interfaces and schema:** Tool results need a retryability code, attempt count, request ID, and idempotency key. No student/comment schema change is required.
+- **Feasibility and dependencies:** High. The useful budget depends on the number of expected tools and whether the API can combine lookups safely.
+- **Privacy and security risks:** A low budget can cause incomplete matching; a high budget increases cost and duplicate-call risk; retry details may expose internal errors.
+- **Recommendation:** Use a conservative per-turn budget, make repeated reads batchable, and stop immediately on authorization or validation errors. Require a fresh teacher action after exhaustion and never auto-retry a write without idempotency.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
