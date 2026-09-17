@@ -617,6 +617,21 @@ Hermes can append a small runtime-context footer to the final gateway message, s
 - **Privacy and security risks:** Model names, working context, or timing can reveal deployment details; latency can be misread as a guarantee; footers can make a draft look more authoritative.
 - **Recommendation:** Keep the footer off for ordinary teacher messages and enable only a minimal, non-operational status in operator views. Never include paths, hostnames, provider credentials, raw tool counts, or student identifiers.
 
+### 109. File-Mutation Verifier
+
+Hermes can append an advisory when a file write or patch failed and the target was not later changed successfully. It helps catch cases where an agent summarizes a batch of edits as successful even though one or more mutations did not land ([official configuration guide](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)).
+
+**Concrete ClassNote integration analysis**
+
+- **Capability and business value:** Reduce false completion claims when Hermes edits ClassNote code, documentation, or migration files.
+- **ClassNote extension point:** Use the verifier in engineering and maintenance sessions, while using API read-back rather than file mutation checks for student/comment writes.
+- **Responsibilities:** Hermes reports failed file mutations; the integration layer maps them to an incomplete change set; CI runs API, database, and frontend checks; the frontend or review workflow blocks publication until evidence exists.
+- **End-to-end flow:** `change request → Hermes patch/write → mutation receipt → verifier warning or success → tests/build/read-back → human review → merge`.
+- **Interfaces and schema:** Verification output should contain file scope, operation type, failure reason, request ID, and evidence status. No business database schema change is required.
+- **Feasibility and dependencies:** High for repository changes. It depends on deterministic patch receipts and an explicit verification command set for each affected layer.
+- **Privacy and security risks:** Verification output can expose filenames or fixture data; a file change can still be semantically wrong; a successful patch does not prove a safe migration or authorized data operation.
+- **Recommendation:** Enable the verifier for code and configuration maintenance, pair it with tests and clean-diff review, and keep it separate from business-data correctness. For student comments, trust API transaction status and read-back, never filesystem mutation evidence.
+
 ## Showcase scope
 
 This is a reviewable architecture and business-code showcase, not a deployable product or a production Hermes configuration.
