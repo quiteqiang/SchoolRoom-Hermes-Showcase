@@ -8,6 +8,57 @@ This repository contains no production deployment code, real user data, API keys
 
 ClassNote helps teachers turn short classroom observations into reviewable student comments. Hermes interprets the teacher's natural-language request and orchestrates only approved business-safe tools; the ClassNote API remains the boundary for validation and data access.
 
+## System Architecture
+
+The main boundary is simple: Hermes understands the teacher's request and orchestrates approved tools; the ClassNote API validates permissions and owns all business writes.
+
+```mermaid
+flowchart LR
+  subgraph Channels["Teacher channels"]
+    TG["Telegram<br/>text or voice"]
+    WEB["Teacher web frontend"]
+  end
+
+  subgraph Hermes["Hermes gateway"]
+    STT["Speech-to-text"]
+    NLU["Natural-language understanding"]
+    ORCH["Tool orchestration"]
+    GUARD["Session, approval<br/>and privacy guardrails"]
+  end
+
+  subgraph Integration["ClassNote integration layer"]
+    MAP["Identity and intent mapping"]
+    TOOLS["Typed, scoped<br/>business tools"]
+  end
+
+  subgraph API["ClassNote API"]
+    AUTH["Validation and<br/>authorization"]
+    READ["Student lookup<br/>and comment reads"]
+    WRITE["Preview, confirmation<br/>and idempotent writes"]
+  end
+
+  DB[("Minimal database<br/>student + comment")]
+  REVIEW["Teacher review<br/>and timeline"]
+
+  TG --> STT
+  TG --> NLU
+  STT --> NLU
+  WEB --> NLU
+  NLU --> GUARD --> ORCH
+  ORCH --> MAP --> TOOLS
+  TOOLS --> AUTH
+  AUTH --> READ
+  AUTH --> WRITE
+  READ --> DB
+  WRITE --> DB
+  READ --> REVIEW
+  WRITE --> REVIEW
+  REVIEW -->|"approve"| WRITE
+  WRITE -->|"verified result"| TG
+```
+
+Hermes never writes the database directly. Every student lookup, preview, approval, and comment write crosses the typed integration layer and is revalidated by the ClassNote API.
+
 ## Documentation
 
 - [Business and Hermes integration architecture](docs/business-architecture.md)
